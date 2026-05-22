@@ -1,26 +1,317 @@
+@import url("https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&display=swap");
 @import "tailwindcss";
 
+/* =====================================================
+   KOURSIO — Design System
+   Palette : #f84904 → #ff0072 + neutres #0F172A
+   Police  : Sora Bold / Regular
+   ===================================================== */
+
 :root {
+  /* ── Brand colors ── */
+  --primary: #f84904;
+  --primary-light: #ff6b35;
+  --primary-dark: #c93800;
+  --primary-foreground: #ffffff;
+  --rose: #ff0072;
+  --rose-dark: #c9005a;
+  --gradient-from: #f84904;
+  --gradient-to: #ff0072;
+
+  /* ── Koursio neutral palette (brand guide) ── */
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #0f172a;
+  --surface: #f8fafc;
+  --surface-2: #e5e7eb;
+  --border: #e5e7eb;
+  --border-strong: #cbd5e1;
+
+  /* ── Text ── */
+  --text-primary: #0f172a;
+  --text-secondary: #334155;
+  --text-muted: #94a3b8;
+  --text-inverted: #ffffff;
+
+  /* ── Status ── */
+  --success: #16a34a;
+  --warning: #d97706;
+  --error: #dc2626;
+  --info: #2563eb;
+
+  /* ── Accents ── */
+  --accent-yellow: #fbbf24;
+  --accent-purple: #7c3aed;
+  --accent-cyan: #0891b2;
+  --accent-pink: #ff0072;
+
+  /* ── Shadows ── */
+  --shadow-comic: 4px 4px 0px 0px #c93800;
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.1);
+  --shadow-brand: 0 8px 32px rgba(248, 73, 4, 0.2);
 }
 
+/* ── Dark mode ── */
+.dark {
+  --background: #0f172a;
+  --foreground: #f8fafc;
+  --surface: #1e293b;
+  --surface-2: #334155;
+  --border: #334155;
+  --border-strong: #475569;
+
+  --text-primary: #f8fafc;
+  --text-secondary: #cbd5e1;
+  --text-muted: #64748b;
+  --text-inverted: #0f172a;
+
+  --shadow-comic: 4px 4px 0px 0px #c93800;
+}
+
+/* ── Tailwind v4 theme mapping ── */
 @theme inline {
+  --color-primary: var(--primary);
+  --color-primary-light: var(--primary-light);
+  --color-primary-dark: var(--primary-dark);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-rose: var(--rose);
+  --color-rose-dark: var(--rose-dark);
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  --color-text-inverted: var(--text-inverted);
+
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-error: var(--error);
+  --color-info: var(--info);
+
+  --color-accent-yellow: var(--accent-yellow);
+  --color-accent-purple: var(--accent-purple);
+  --color-accent-cyan: var(--accent-cyan);
+  --color-accent-pink: var(--accent-pink);
+
+  --font-sans: "Sora", system-ui, sans-serif;
+  --font-display: "Sora", system-ui, sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* ── Base ── */
+* {
+  border-color: var(--border);
+}
+html {
+  scroll-behavior: smooth;
+}
+body {
+  background: var(--background);
+  color: var(--text-primary);
+  font-family: "Sora", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* =====================================================
+   GRADIENT UTILITIES
+   ===================================================== */
+.gradient-brand {
+  background: linear-gradient(135deg, var(--gradient-from), var(--gradient-to));
+}
+.gradient-brand-text {
+  background: linear-gradient(135deg, var(--gradient-from), var(--gradient-to));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.gradient-brand-subtle {
+  background: linear-gradient(
+    135deg,
+    rgba(248, 73, 4, 0.07),
+    rgba(255, 0, 114, 0.07)
+  );
+}
+/* aliases */
+.gradient-secondary {
+  background: linear-gradient(135deg, var(--gradient-from), var(--gradient-to));
+}
+.gradient-primary {
+  background: linear-gradient(135deg, var(--primary), var(--primary-light));
+}
+.gradient-text-secondary {
+  background: linear-gradient(135deg, var(--gradient-from), var(--gradient-to));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.gradient-text-primary {
+  background: linear-gradient(135deg, var(--primary), var(--primary-light));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* =====================================================
+   LOGO PLACEHOLDER
+   ===================================================== */
+.logo-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px dashed var(--border-strong);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: border-color 0.15s ease;
+}
+.logo-placeholder:hover {
+  border-color: var(--primary);
+}
+
+/* =====================================================
+   COMIC CARD
+   ===================================================== */
+.comic-card {
+  border: 2px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 3px 0 0 var(--border-strong);
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    border-color 0.15s ease;
+}
+.comic-card:hover {
+  transform: translate(-1px, -2px);
+  box-shadow: 0 6px 0 0 #c93800;
+  border-color: rgba(248, 73, 4, 0.4);
+}
+.dark .comic-card {
+  border-color: var(--border);
+  box-shadow: 0 3px 0 0 var(--border-strong);
+}
+.dark .comic-card:hover {
+  box-shadow: 0 6px 0 0 #c93800;
+  border-color: rgba(248, 73, 4, 0.3);
+}
+
+/* =====================================================
+   GLASSMORPHISM
+   ===================================================== */
+.glass {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+.dark .glass {
+  background: rgba(15, 23, 42, 0.85);
+}
+
+/* =====================================================
+   GLOW
+   ===================================================== */
+.glow-orange {
+  box-shadow:
+    0 0 24px rgba(248, 73, 4, 0.35),
+    0 0 64px rgba(248, 73, 4, 0.1);
+}
+.glow-rose {
+  box-shadow:
+    0 0 24px rgba(255, 0, 114, 0.35),
+    0 0 64px rgba(255, 0, 114, 0.1);
+}
+
+/* =====================================================
+   ANIMATIONS
+   ===================================================== */
+@keyframes shimmer {
+  from {
+    background-position: -200% 0;
+  }
+  to {
+    background-position: 200% 0;
+  }
+}
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+@keyframes pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 rgba(248, 73, 4, 0.4);
+  }
+  100% {
+    box-shadow: 0 0 0 10px rgba(248, 73, 4, 0);
+  }
+}
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+.animate-pulse-ring {
+  animation: pulse-ring 2s ease-out infinite;
+}
+.animate-slide-up {
+  animation: slide-up 0.4s ease-out forwards;
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--surface) 25%,
+    var(--border) 50%,
+    var(--surface) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* =====================================================
+   SCROLLBAR
+   ===================================================== */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: var(--surface);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}
+
+/* =====================================================
+   SELECTION
+   ===================================================== */
+::selection {
+  background: var(--primary);
+  color: white;
 }

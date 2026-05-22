@@ -4,7 +4,12 @@
       "PowerShell(Get-ChildItem \"C:\\\\Users\\\\djeba\\\\Desktop\\\\mylms\" -ErrorAction SilentlyContinue | Select-Object Name, Length, LastWriteTime; if \\(-not \\(Test-Path \"C:\\\\Users\\\\djeba\\\\Desktop\\\\mylms\"\\)\\) { \"Répertoire vide ou inexistant\" })",
       "PowerShell(node --version)",
       "PowerShell(npm --version)",
-      "PowerShell(npx --version)"
+      "PowerShell(npx --version)",
+      "Bash(node -e \"const l = require\\('lucide-react'\\); const keys = Object.keys\\(l\\).filter\\(k => k.toLowerCase\\(\\).includes\\('twitter'\\) || k.toLowerCase\\(\\).includes\\('x'\\)\\); console.log\\(keys.slice\\(0, 10\\)\\)\")",
+      "Bash(psql --version)",
+      "Bash(supabase --version)",
+      "mcp__Claude_Preview__preview_start",
+      "PowerShell(Get-Process | Where-Object { $_.Name -match \"node\" } | Stop-Process -Force -Confirm:$false 2>$null; Start-Sleep -Seconds 2; Write-Output \"Killed\")"
     ]
   }
 }

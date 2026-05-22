@@ -1,65 +1,89 @@
-import Image from "next/image";
+﻿import type { Metadata } from "next";
+import { Navbar } from "@/components/layout/navbar";
+import { Footer } from "@/components/layout/footer";
+import { HeroSection } from "@/components/marketing/hero-section";
+import { CoursesSection } from "@/components/marketing/courses-section";
+import { CategoriesBento } from "@/components/marketing/categories-bento";
+import { WhyUsSection } from "@/components/marketing/why-us-section";
+import { TestimonialsSection } from "@/components/marketing/testimonials-section";
+import { StatsSection } from "@/components/marketing/stats-section";
+import { InstructorsSection } from "@/components/marketing/instructors-section";
+import { FaqSection } from "@/components/marketing/faq-section";
+import { PromoPopup } from "@/components/marketing/promo-popup";
+import { FloatingCTA } from "@/components/marketing/floating-cta";
+import {
+  MOCK_COURSES,
+  MOCK_CATEGORIES,
+  MOCK_INSTRUCTORS,
+} from "@/lib/data/mock-data";
 
-export default function Home() {
+export const metadata: Metadata = {
+  title: "Koursio — Apprends. Pratique. Progresse.",
+  description:
+    "La plateforme d'apprentissage en ligne simple, engageante et efficace.",
+};
+
+const featuredCourses = MOCK_COURSES.filter((c) => c.is_featured).map((c) => {
+  const instructor = MOCK_INSTRUCTORS.find((i) => i.id === c.instructor_id);
+  return {
+    ...c,
+    instructor: instructor ? { full_name: instructor.full_name } : undefined,
+  };
+});
+
+const bestsellers = MOCK_COURSES.filter((c) => c.is_bestseller).map((c) => {
+  const instructor = MOCK_INSTRUCTORS.find((i) => i.id === c.instructor_id);
+  return {
+    ...c,
+    instructor: instructor ? { full_name: instructor.full_name } : undefined,
+  };
+});
+
+const newest = MOCK_COURSES.filter((c) => c.is_new).map((c) => {
+  const instructor = MOCK_INSTRUCTORS.find((i) => i.id === c.instructor_id);
+  return {
+    ...c,
+    instructor: instructor ? { full_name: instructor.full_name } : undefined,
+  };
+});
+
+export default function HomePage() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+    <>
+      <Navbar />
+      <main className="min-h-screen pt-16">
+        <HeroSection />
+        <CoursesSection
+          title="Cours tendances"
+          accent=" Cette semaine"
+          subtitle="Les formations les plus populaires du moment"
+          courses={featuredCourses}
+          href="/cours?tri=populaire"
         />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+        <CategoriesBento categories={MOCK_CATEGORIES} />
+        <CoursesSection
+          title="Bestsellers"
+          accent=" Les plus vendus"
+          subtitle="Plébiscités par des milliers d'apprenants"
+          courses={bestsellers}
+          href="/cours?tri=bestseller"
+        />
+        <WhyUsSection />
+        <StatsSection />
+        <CoursesSection
+          title="Nouveautés"
+          accent=" Vient de sortir"
+          subtitle="Découvrez nos dernières formations"
+          courses={newest}
+          href="/cours?tri=nouveau"
+        />
+        <InstructorsSection />
+        <TestimonialsSection />
+        <FaqSection />
       </main>
-    </div>
+      <Footer />
+      <PromoPopup delay={10000} code="BIENVENUE70" discount={70} />
+      <FloatingCTA />
+    </>
   );
 }
