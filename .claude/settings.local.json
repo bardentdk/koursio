@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Get-ChildItem \"C:\\\\Users\\\\djeba\\\\Desktop\\\\mylms\" -ErrorAction SilentlyContinue | Select-Object Name, Length, LastWriteTime; if \\(-not \\(Test-Path \"C:\\\\Users\\\\djeba\\\\Desktop\\\\mylms\"\\)\\) { \"Répertoire vide ou inexistant\" })",
+      "PowerShell(node --version)",
+      "PowerShell(npm --version)",
+      "PowerShell(npx --version)"
+    ]
+  }
+}
