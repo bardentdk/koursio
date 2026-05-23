@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Tag, ArrowRight, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { PaperPlane } from "@/components/illustrations/paper-plane";
 import Link from "next/link";
 
 interface PromoPopupProps {
@@ -71,8 +72,10 @@ export function PromoPopup({
               </button>
 
               <div className="p-8 text-center flex flex-col items-center gap-5">
-                {/* Icon */}
-                <div className="w-20 h-20 rounded-[24px] gradient-brand flex items-center justify-center text-4xl shadow-[0_6px_0_0_#c93800]"></div>
+                {/* Icon — paper plane animé */}
+                <div className="w-20 h-20 rounded-[24px] gradient-brand flex items-center justify-center shadow-[0_6px_0_0_#c93800]">
+                  <PaperPlane size={44} withTrail={false} />
+                </div>
 
                 {/* Badge */}
                 <span className="px-3 py-1.5 rounded-full gradient-brand text-white text-xs font-black shadow-[0_2px_0_0_#c93800]">

@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { Mail, AlertCircle, CheckCircle, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { KoursioMark } from "@/components/illustrations/koursio-mark";
 import { createClient } from "@/lib/supabase/client";
 
 export default function MotDePasseOubliePage() {
@@ -71,8 +72,8 @@ export default function MotDePasseOubliePage() {
     >
       <div className="comic-card bg-background p-8 flex flex-col gap-6">
         <div className="text-center">
-          <div className="w-16 h-16 rounded-[16px] bg-primary/10 border-2 border-primary/30 flex items-center justify-center mx-auto mb-4">
-            <span className="text-3xl"></span>
+          <div className="flex justify-center mb-4">
+            <KoursioMark size={56} />
           </div>
           <h1 className="text-2xl font-black text-text-primary">
             Mot de passe oublié ?
