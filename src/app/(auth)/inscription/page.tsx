@@ -13,6 +13,7 @@ import {
   AlertCircle,
   CheckCircle,
 } from "lucide-react";
+import { KoursioMark } from "@/components/illustrations/koursio-mark";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { createClient } from "@/lib/supabase/client";
@@ -110,8 +111,8 @@ export default function InscriptionPage() {
       <div className="comic-card bg-background p-8 flex flex-col gap-6">
         {/* Header */}
         <div className="text-center">
-          <div className="w-16 h-16 rounded-[16px] bg-primary/10 border-2 border-primary/30 flex items-center justify-center mx-auto mb-4">
-            <span className="text-3xl"></span>
+          <div className="flex justify-center mb-4">
+            <KoursioMark size={64} withSparks />
           </div>
           <h1 className="text-2xl font-black text-text-primary">
             Créer un compte

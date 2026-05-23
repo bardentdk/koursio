@@ -18,7 +18,10 @@ import { SearchBar } from "@/components/ui/search-bar";
 import { useRouter } from "next/navigation";
 import { RocketIllustration } from "@/components/illustrations/rocket-illustration";
 import { KoursioMark } from "@/components/illustrations/koursio-mark";
-import { BrandUnderline, SparklesDecor } from "@/components/illustrations/sparkles-decor";
+import {
+  BrandUnderline,
+  SparklesDecor,
+} from "@/components/illustrations/sparkles-decor";
 import {
   TrophyIllu,
   LightningIllu,
@@ -272,15 +275,21 @@ export function HeroSection() {
               {/* Central hero card */}
               <div className="absolute inset-10 rounded-[32px] bg-background border-2 border-foreground/10 shadow-[0_20px_60px_rgba(248,73,4,0.20)] flex flex-col items-center justify-center gap-5 p-8 overflow-hidden">
                 {/* Subtle gradient overlay */}
-                <div className="absolute top-0 right-0 w-32 h-32 rounded-full opacity-30 blur-2xl"
-                  style={{ background: "radial-gradient(circle, #f84904, transparent)" }} />
+                <div
+                  className="absolute top-0 right-0 w-32 h-32 rounded-full opacity-30 blur-2xl"
+                  style={{
+                    background: "radial-gradient(circle, #f84904, transparent)",
+                  }}
+                />
 
                 <div className="relative z-10 text-center flex flex-col items-center gap-4">
                   {/* Marque Koursio */}
                   <KoursioMark size={80} />
 
                   <div>
-                    <p className="font-black text-2xl text-text-primary">Koursio</p>
+                    <p className="font-black text-2xl text-text-primary">
+                      Koursio
+                    </p>
                     <p className="text-text-muted text-sm">
                       Apprends. Pratique. Progresse.
                     </p>

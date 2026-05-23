@@ -55,7 +55,7 @@ export default function HomePage() {
         <HeroSection />
         <CoursesSection
           title="Cours tendances"
-          accent=" Cette semaine"
+          accent="Cette semaine"
           subtitle="Les formations les plus populaires du moment"
           courses={featuredCourses}
           href="/cours?tri=populaire"
@@ -63,7 +63,7 @@ export default function HomePage() {
         <CategoriesBento categories={MOCK_CATEGORIES} />
         <CoursesSection
           title="Bestsellers"
-          accent=" Les plus vendus"
+          accent="Les plus vendus"
           subtitle="Plébiscités par des milliers d'apprenants"
           courses={bestsellers}
           href="/cours?tri=bestseller"
@@ -72,7 +72,7 @@ export default function HomePage() {
         <StatsSection />
         <CoursesSection
           title="Nouveautés"
-          accent=" Vient de sortir"
+          accent="Vient de sortir"
           subtitle="Découvrez nos dernières formations"
           courses={newest}
           href="/cours?tri=nouveau"
