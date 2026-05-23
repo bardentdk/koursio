@@ -1,21 +1,17 @@
-﻿"use client";
+"use client";
 
-import { useState, useTransition, Suspense } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useState, useTransition, Suspense, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
-import { SlidersHorizontal, Grid3X3, List, X, ChevronDown } from "lucide-react";
+import { SlidersHorizontal, Grid3X3, List, X } from "lucide-react";
 import { CourseCard } from "@/components/ui/course-card";
-import { CourseCardSkeleton } from "@/components/ui/skeleton";
 import { SearchBar } from "@/components/ui/search-bar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
-import {
-  MOCK_COURSES,
-  MOCK_CATEGORIES,
-  MOCK_INSTRUCTORS,
-} from "@/lib/data/mock-data";
+import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils/cn";
+import type { CourseRow, CategoryRow } from "@/lib/supabase/queries";
 
 const LEVELS = [
   { value: "", label: "Tous niveaux" },
@@ -34,35 +30,52 @@ const SORT_OPTIONS = [
 
 const PRICE_RANGES = [
   { value: "", label: "Tous les prix" },
-  { value: "0-0", label: "Gratuit" },
   { value: "0-30", label: "Moins de 30€" },
   { value: "30-60", label: "30€ - 60€" },
   { value: "60-999", label: "Plus de 60€" },
 ];
 
 function CataloguePage() {
-  const router = useRouter();
   const searchParams = useSearchParams();
 
   const [query, setQuery] = useState(searchParams.get("q") ?? "");
-  const [category, setCategory] = useState(searchParams.get("categorie") ?? "");
+  const [category, setCategory] = useState(
+    searchParams.get("categorie") ?? "",
+  );
   const [level, setLevel] = useState(searchParams.get("niveau") ?? "");
-  const [priceRange, setPriceRange] = useState(searchParams.get("prix") ?? "");
+  const [priceRange, setPriceRange] = useState(
+    searchParams.get("prix") ?? "",
+  );
   const [sort, setSort] = useState(searchParams.get("tri") ?? "popular");
   const [view, setView] = useState<"grid" | "list">("grid");
   const [showFilters, setShowFilters] = useState(false);
-  const [isPending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
 
-  // Filter courses with mock data
-  const allCourses = MOCK_COURSES.map((c) => {
-    const instructor = MOCK_INSTRUCTORS.find((i) => i.id === c.instructor_id);
-    const cat = MOCK_CATEGORIES.find((cat) => cat.id === c.category_id);
-    return {
-      ...c,
-      instructor: instructor ? { full_name: instructor.full_name } : undefined,
-      category: cat ?? null,
-    };
-  });
+  const [allCourses, setAllCourses] = useState<CourseRow[]>([]);
+  const [categories, setCategories] = useState<CategoryRow[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const supabase = createClient();
+    Promise.all([
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (supabase.from("courses") as any)
+        .select(
+          "id, title, slug, subtitle, price, original_price, thumbnail_url, rating, total_reviews, total_enrollments, level, duration_hours, total_lessons, is_featured, is_bestseller, is_new, has_certificate, status, currency, category_id, published_at, instructor:profiles!instructor_id(id, full_name), category:categories(id, name, slug, color)",
+        )
+        .eq("status", "published")
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("categories")
+        .select("*")
+        .eq("is_active", true)
+        .order("order_index"),
+    ]).then(([{ data: courses }, { data: cats }]) => {
+      setAllCourses((courses ?? []) as CourseRow[]);
+      setCategories((cats ?? []) as CategoryRow[]);
+      setLoading(false);
+    });
+  }, []);
 
   const filtered = allCourses
     .filter((c) => {
@@ -119,8 +132,9 @@ function CataloguePage() {
               Catalogue des formations
             </h1>
             <p className="text-text-secondary">
-              {filtered.length} formation{filtered.length !== 1 ? "s" : ""}{" "}
-              disponible{filtered.length !== 1 ? "s" : ""}
+              {loading
+                ? "Chargement..."
+                : `${filtered.length} formation${filtered.length !== 1 ? "s" : ""} disponible${filtered.length !== 1 ? "s" : ""}`}
             </p>
           </motion.div>
 
@@ -160,7 +174,7 @@ function CataloguePage() {
             >
               Tout
             </button>
-            {MOCK_CATEGORIES.map((cat) => (
+            {categories.map((cat) => (
               <button
                 key={cat.id}
                 onClick={() =>
@@ -175,8 +189,8 @@ function CataloguePage() {
                 style={
                   category === cat.slug
                     ? {
-                        backgroundColor: cat.color ?? "#00674F",
-                        borderColor: cat.color ?? "#00674F",
+                        backgroundColor: cat.color ?? "#f84904",
+                        borderColor: cat.color ?? "#f84904",
                       }
                     : {}
                 }
@@ -257,7 +271,7 @@ function CataloguePage() {
                   />
                 }
               >
-                "{query}"
+                &ldquo;{query}&rdquo;
               </Badge>
             )}
             {category && (
@@ -270,7 +284,7 @@ function CataloguePage() {
                   />
                 }
               >
-                {MOCK_CATEGORIES.find((c) => c.slug === category)?.name}
+                {categories.find((c) => c.slug === category)?.name}
               </Badge>
             )}
           </div>
@@ -315,7 +329,16 @@ function CataloguePage() {
         </div>
 
         {/* Results */}
-        {filtered.length === 0 ? (
+        {loading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div
+                key={i}
+                className="rounded-[16px] bg-surface border-2 border-border animate-pulse h-80"
+              />
+            ))}
+          </div>
+        ) : filtered.length === 0 ? (
           <EmptyState
             title="Aucune formation trouvée"
             description="Essayez d'autres filtres ou une recherche différente."
@@ -338,7 +361,7 @@ function CataloguePage() {
                 transition={{ delay: Math.min(i * 0.04, 0.3) }}
               >
                 <CourseCard
-                  course={course}
+                  course={course as never}
                   compact={view === "list"}
                   className="h-full"
                 />
@@ -351,7 +374,6 @@ function CataloguePage() {
   );
 }
 
-// Wrap in Suspense for useSearchParams
 function CataloguePageWrapper() {
   return (
     <Suspense

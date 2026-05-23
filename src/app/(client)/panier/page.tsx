@@ -1,39 +1,57 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { Trash2, Tag, ShoppingBag, ArrowRight, BookOpen } from "lucide-react";
+import { Trash2, Tag, ShoppingBag, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
-import { MOCK_COURSES, MOCK_INSTRUCTORS } from "@/lib/data/mock-data";
 import { formatPrice } from "@/lib/utils/format";
 import { toast } from "sonner";
+import { createClient } from "@/lib/supabase/client";
+
+type CartCourse = {
+  id: string;
+  title: string;
+  slug: string;
+  price: number;
+  original_price?: number | null;
+  thumbnail_url?: string | null;
+  instructor?: { full_name?: string | null } | null;
+};
 
 export default function PanierPage() {
   const [cartIds, setCartIds] = useState<string[]>([]);
+  const [cartCourses, setCartCourses] = useState<CartCourse[]>([]);
+  const [loading, setLoading] = useState(true);
   const [couponCode, setCouponCode] = useState("");
   const [discount, setDiscount] = useState(0);
   const [couponApplied, setCouponApplied] = useState("");
   const [couponError, setCouponError] = useState("");
 
   useEffect(() => {
-    const stored = JSON.parse(localStorage.getItem("cart") ?? "[]");
+    const stored = JSON.parse(localStorage.getItem("cart") ?? "[]") as string[];
     setCartIds(stored);
-  }, []);
 
-  const cartCourses = cartIds
-    .map((id) => {
-      const course = MOCK_COURSES.find((c) => c.id === id);
-      const instructor = course
-        ? MOCK_INSTRUCTORS.find((i) => i.id === course.instructor_id)
-        : undefined;
-      return course ? { ...course, instructor } : null;
-    })
-    .filter(Boolean) as (typeof MOCK_COURSES)[0][];
+    if (stored.length === 0) {
+      setLoading(false);
+      return;
+    }
+
+    const supabase = createClient();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (supabase.from("courses") as any)
+      .select(
+        "id, title, slug, price, original_price, thumbnail_url, instructor:profiles!instructor_id(full_name)",
+      )
+      .in("id", stored)
+      .then(({ data }: { data: CartCourse[] | null }) => {
+        setCartCourses(data ?? []);
+        setLoading(false);
+      });
+  }, []);
 
   const subtotal = cartCourses.reduce((sum, c) => sum + c.price, 0);
   const discountAmount = discount > 0 ? subtotal * (discount / 100) : 0;
@@ -42,6 +60,7 @@ export default function PanierPage() {
   const removeFromCart = (id: string) => {
     const updated = cartIds.filter((cid) => cid !== id);
     setCartIds(updated);
+    setCartCourses((c) => c.filter((x) => x.id !== id));
     localStorage.setItem("cart", JSON.stringify(updated));
     toast.info("Cours retiré du panier");
   };
@@ -59,7 +78,7 @@ export default function PanierPage() {
       setDiscount(VALID_COUPONS[code]);
       setCouponApplied(code);
       setCouponError("");
-      toast.success(`Code promo"${code}" appliqué ! -${VALID_COUPONS[code]}%`);
+      toast.success(`Code "${code}" appliqué ! -${VALID_COUPONS[code]}%`);
     } else {
       setCouponError("Code promo invalide ou expiré.");
       setDiscount(0);
@@ -67,13 +86,13 @@ export default function PanierPage() {
     }
   };
 
-  if (cartCourses.length === 0) {
+  if (!loading && cartCourses.length === 0) {
     return (
       <div className="min-h-screen bg-background pt-20">
         <EmptyState
           icon={<ShoppingBag className="w-10 h-10" />}
           title="Votre panier est vide"
-          description="Découvrez nos formations et ajoutez-en une à votre panier pour commencer."
+          description="Découvrez nos formations et ajoutez-en une à votre panier."
           action={{ label: "Explorer les cours", href: "/cours" }}
         />
       </div>
@@ -94,6 +113,13 @@ export default function PanierPage() {
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Course list */}
           <div className="lg:col-span-2 flex flex-col gap-4">
+            {loading &&
+              Array.from({ length: 2 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="h-24 bg-surface-2 rounded-[16px] animate-pulse"
+                />
+              ))}
             {cartCourses.map((course, i) => (
               <motion.div
                 key={course.id}
@@ -118,13 +144,11 @@ export default function PanierPage() {
                       {course.title}
                     </h3>
                   </Link>
-                  <p className="text-xs text-text-muted mt-0.5">
-                    {
-                      MOCK_INSTRUCTORS.find(
-                        (i) => i.id === course.instructor_id,
-                      )?.full_name
-                    }
-                  </p>
+                  {course.instructor?.full_name && (
+                    <p className="text-xs text-text-muted mt-0.5">
+                      {course.instructor.full_name}
+                    </p>
+                  )}
                   <div className="flex items-center gap-3 mt-2">
                     <span className="font-black text-primary text-lg">
                       {formatPrice(course.price)}
@@ -155,7 +179,7 @@ export default function PanierPage() {
 
               {/* Coupon */}
               <div className="mb-5">
-                <label className="text-sm font-bold text-text-muted mb-2 block flex items-center gap-1">
+                <label className="text-sm font-bold text-text-muted mb-2 flex items-center gap-1">
                   <Tag className="w-3.5 h-3.5" /> Code promo
                 </label>
                 {couponApplied ? (
@@ -193,7 +217,6 @@ export default function PanierPage() {
                 )}
               </div>
 
-              {/* Totals */}
               <div className="flex flex-col gap-2 pb-4 border-b border-border">
                 <div className="flex justify-between text-sm">
                   <span className="text-text-secondary">Sous-total</span>

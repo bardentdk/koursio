@@ -1,4 +1,4 @@
-﻿import type { Metadata } from "next";
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -10,10 +10,8 @@ import {
   Award,
   Download,
   CheckCircle,
-  ChevronDown,
   Play,
   Heart,
-  ShoppingCart,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -21,11 +19,11 @@ import { Avatar } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
 import { CourseCard } from "@/components/ui/course-card";
 import {
-  MOCK_COURSES,
-  MOCK_CATEGORIES,
-  MOCK_INSTRUCTORS,
-  MOCK_REVIEWS,
-} from "@/lib/data/mock-data";
+  getCourseBySlug,
+  getCourseReviews,
+  getCourseSections,
+  getRelatedCourses,
+} from "@/lib/supabase/queries";
 import { formatPrice, formatDuration, formatNumber } from "@/lib/utils/format";
 import { CourseAccordion } from "@/components/course/course-accordion";
 import { AddToCartButton } from "@/components/course/add-to-cart-button";
@@ -36,7 +34,7 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const course = MOCK_COURSES.find((c) => c.slug === slug);
+  const course = await getCourseBySlug(slug);
   if (!course) return { title: "Cours introuvable" };
   return {
     title: course.seo_title ?? course.title,
@@ -46,25 +44,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function CourseDetailPage({ params }: Props) {
   const { slug } = await params;
-  const course = MOCK_COURSES.find((c) => c.slug === slug);
+  const course = await getCourseBySlug(slug);
   if (!course) notFound();
 
-  const instructor = MOCK_INSTRUCTORS.find(
-    (i) => i.id === course.instructor_id,
-  );
-  const category = MOCK_CATEGORIES.find((c) => c.id === course.category_id);
-  const reviews = MOCK_REVIEWS.filter((r) => r.course_id === course.id);
-  const related = MOCK_COURSES.filter(
-    (c) => c.category_id === course.category_id && c.id !== course.id,
-  )
-    .slice(0, 4)
-    .map((c) => {
-      const inst = MOCK_INSTRUCTORS.find((i) => i.id === c.instructor_id);
-      return {
-        ...c,
-        instructor: inst ? { full_name: inst.full_name } : undefined,
-      };
-    });
+  const [reviews, sections, related] = await Promise.all([
+    getCourseReviews(course.id),
+    getCourseSections(course.id),
+    course.category_id
+      ? getRelatedCourses(course.category_id, course.id, 4)
+      : Promise.resolve([]),
+  ]);
+
+  const instructor = course.instructor;
+  const category = course.category;
 
   const discount =
     course.original_price && course.original_price > course.price
@@ -73,96 +65,6 @@ export default async function CourseDetailPage({ params }: Props) {
             100,
         )
       : 0;
-
-  const MOCK_SECTIONS = [
-    {
-      id: "s1",
-      title: "Introduction & Mise en place",
-      lessons: [
-        {
-          id: "l1",
-          title: "Présentation du cours et objectifs",
-          duration: 320,
-          is_free: true,
-        },
-        {
-          id: "l2",
-          title: "Installation de l'environnement",
-          duration: 540,
-          is_free: true,
-        },
-        {
-          id: "l3",
-          title: "Structure du projet",
-          duration: 420,
-          is_free: false,
-        },
-      ],
-    },
-    {
-      id: "s2",
-      title: "Les fondamentaux",
-      lessons: [
-        { id: "l4", title: "Concepts de base", duration: 680, is_free: false },
-        {
-          id: "l5",
-          title: "Mise en pratique — Exercice 1",
-          duration: 900,
-          is_free: false,
-        },
-        {
-          id: "l6",
-          title: "Quiz de validation",
-          duration: 180,
-          is_free: false,
-        },
-      ],
-    },
-    {
-      id: "s3",
-      title: "Fonctionnalités avancées",
-      lessons: [
-        { id: "l7", title: "Patterns avancés", duration: 1200, is_free: false },
-        {
-          id: "l8",
-          title: "Optimisation des performances",
-          duration: 780,
-          is_free: false,
-        },
-        { id: "l9", title: "Travail pratique", duration: 1500, is_free: false },
-      ],
-    },
-    {
-      id: "s4",
-      title: "Projet final",
-      lessons: [
-        {
-          id: "l10",
-          title: "Architecture du projet final",
-          duration: 600,
-          is_free: false,
-        },
-        {
-          id: "l11",
-          title: "Développement — Partie 1",
-          duration: 2400,
-          is_free: false,
-        },
-        {
-          id: "l12",
-          title: "Développement — Partie 2",
-          duration: 2100,
-          is_free: false,
-        },
-        {
-          id: "l13",
-          title: "Déploiement et mise en production",
-          duration: 900,
-          is_free: false,
-        },
-      ],
-    },
-  ];
 
   return (
     <div className="min-h-screen bg-background">
@@ -219,7 +121,7 @@ export default async function CourseDetailPage({ params }: Props) {
             {instructor && (
               <div className="flex items-center gap-2">
                 <Avatar
-                  src={instructor.avatar_url}
+                  src={instructor.avatar_url ?? undefined}
                   name={instructor.full_name ?? ""}
                   size="sm"
                 />
@@ -239,7 +141,7 @@ export default async function CourseDetailPage({ params }: Props) {
               {course.is_bestseller && (
                 <Badge variant="bestseller">Bestseller</Badge>
               )}
-              {course.is_new && <Badge variant="new ">Nouveau</Badge>}
+              {course.is_new && <Badge variant="new">Nouveau</Badge>}
               {course.has_certificate && (
                 <Badge variant="certified">Certifiant</Badge>
               )}
@@ -252,19 +154,14 @@ export default async function CourseDetailPage({ params }: Props) {
           {/* Right — Card (desktop sticky) */}
           <div className="hidden lg:block">
             <CourseCard
-              course={{
-                ...course,
-                instructor: instructor
-                  ? { full_name: instructor.full_name }
-                  : undefined,
-              }}
+              course={course as never}
               className="sticky top-20"
             />
           </div>
         </div>
       </div>
 
-      {/* Mobile purchase card */}
+      {/* Mobile purchase bar */}
       <div className="lg:hidden sticky top-16 z-40 bg-background border-b-2 border-border shadow-md">
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
           <div>
@@ -325,7 +222,9 @@ export default async function CourseDetailPage({ params }: Props) {
                     key={i}
                     className="flex gap-2 text-sm text-text-secondary"
                   >
-                    <span className="text-primary font-bold shrink-0">→</span>{" "}
+                    <span className="text-primary font-bold shrink-0">
+                      {">"}
+                    </span>{" "}
                     {req}
                   </li>
                 ))}
@@ -334,18 +233,20 @@ export default async function CourseDetailPage({ params }: Props) {
           )}
 
           {/* Programme */}
-          <section id="programme">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-black text-text-primary">
-                Programme du cours
-              </h2>
-              <span className="text-sm text-text-muted">
-                {course.total_modules} modules · {course.total_lessons} leçons ·{" "}
-                {formatDuration(course.duration_hours)}
-              </span>
-            </div>
-            <CourseAccordion sections={MOCK_SECTIONS} />
-          </section>
+          {sections.length > 0 && (
+            <section id="programme">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-black text-text-primary">
+                  Programme du cours
+                </h2>
+                <span className="text-sm text-text-muted">
+                  {sections.length} modules · {course.total_lessons} leçons ·{" "}
+                  {formatDuration(course.duration_hours)}
+                </span>
+              </div>
+              <CourseAccordion sections={sections} />
+            </section>
+          )}
 
           {/* Instructor */}
           {instructor && (
@@ -355,7 +256,7 @@ export default async function CourseDetailPage({ params }: Props) {
               </h2>
               <div className="flex gap-4">
                 <Avatar
-                  src={instructor.avatar_url}
+                  src={instructor.avatar_url ?? undefined}
                   name={instructor.full_name ?? ""}
                   size="xl"
                   className="shrink-0"
@@ -364,32 +265,11 @@ export default async function CourseDetailPage({ params }: Props) {
                   <h3 className="font-black text-lg text-text-primary">
                     {instructor.full_name}
                   </h3>
-                  <div className="flex items-center gap-4 text-sm text-text-muted">
-                    <span className="flex items-center gap-1">
-                      <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
-                      {instructor.instructor_profile.rating} note
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Users className="w-4 h-4" />
-                      {formatNumber(
-                        instructor.instructor_profile.total_students,
-                      )}{" "}
-                      apprenants
-                    </span>
-                  </div>
-                  <p className="text-sm text-text-secondary leading-relaxed">
-                    {instructor.bio}
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {instructor.instructor_profile.specialties?.map((s) => (
-                      <span
-                        key={s}
-                        className="text-xs px-2 py-1 rounded-full bg-primary/10 text-primary border border-primary/20 font-medium"
-                      >
-                        {s}
-                      </span>
-                    ))}
-                  </div>
+                  {instructor.bio && (
+                    <p className="text-sm text-text-secondary leading-relaxed">
+                      {instructor.bio}
+                    </p>
+                  )}
                 </div>
               </div>
             </section>
@@ -445,10 +325,14 @@ export default async function CourseDetailPage({ params }: Props) {
                 {reviews.map((review) => (
                   <div key={review.id} className="comic-card bg-surface p-4">
                     <div className="flex items-center gap-3 mb-3">
-                      <Avatar name={review.user.full_name ?? ""} size="sm" />
+                      <Avatar
+                        name={review.user?.full_name ?? "Apprenant"}
+                        src={review.user?.avatar_url ?? undefined}
+                        size="sm"
+                      />
                       <div>
                         <p className="font-bold text-sm text-text-primary">
-                          {review.user.full_name}
+                          {review.user?.full_name ?? "Apprenant"}
                         </p>
                         <div className="flex">
                           {[1, 2, 3, 4, 5].map((s) => (
@@ -479,7 +363,7 @@ export default async function CourseDetailPage({ params }: Props) {
               </h2>
               <div className="grid sm:grid-cols-2 gap-4">
                 {related.map((c) => (
-                  <CourseCard key={c.id} course={c} compact />
+                  <CourseCard key={c.id} course={c as never} compact />
                 ))}
               </div>
             </section>
