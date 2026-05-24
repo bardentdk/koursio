@@ -1,5 +1,6 @@
-﻿import { redirect } from "next/navigation";
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getUserRole } from "@/lib/permissions";
 import { AdminSidebar } from "@/components/admin/sidebar";
 import { DashboardHeader } from "@/components/dashboard/header";
 
@@ -14,9 +15,8 @@ export default async function AdminLayout({
   } = await supabase.auth.getUser();
   if (!user) redirect("/connexion");
 
-  // In production: check if user is admin
-  // const role = await getUserRole(user.id);
-  // if (role !== "admin") redirect("/dashboard");
+  const role = await getUserRole(user.id);
+  if (role !== "admin") redirect("/dashboard");
 
   return (
     <div className="min-h-screen bg-surface flex">

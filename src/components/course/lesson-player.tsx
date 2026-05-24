@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -47,6 +47,70 @@ function formatSeconds(s: number) {
   const m = Math.floor(s / 60);
   const h = Math.floor(m / 60);
   return h > 0 ? `${h}h ${m % 60}min` : `${m}min`;
+}
+
+function VideoPlayer({
+  videoUrl,
+  lessonTitle,
+}: {
+  videoUrl: string | null;
+  lessonTitle: string;
+}) {
+  if (!videoUrl) {
+    return (
+      <div className="w-full h-full flex flex-col items-center justify-center gap-4 text-white/40">
+        <div className="w-20 h-20 rounded-full bg-white/10 flex items-center justify-center">
+          <Play className="w-10 h-10 fill-white/30 ml-1" />
+        </div>
+        <p className="text-sm">Vidéo disponible après connexion Supabase Storage</p>
+      </div>
+    );
+  }
+
+  // YouTube
+  if (videoUrl.includes("youtube.com") || videoUrl.includes("youtu.be")) {
+    const videoId = videoUrl.includes("youtu.be")
+      ? videoUrl.split("youtu.be/")[1]?.split("?")[0]
+      : new URL(videoUrl).searchParams.get("v");
+    return (
+      <iframe
+        src={`https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1`}
+        className="w-full h-full"
+        allowFullScreen
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        title={lessonTitle}
+      />
+    );
+  }
+
+  // Vimeo
+  if (videoUrl.includes("vimeo.com")) {
+    const videoId = videoUrl.split("vimeo.com/")[1]?.split("?")[0];
+    return (
+      <iframe
+        src={`https://player.vimeo.com/video/${videoId}?title=0&byline=0&portrait=0`}
+        className="w-full h-full"
+        allowFullScreen
+        allow="autoplay; fullscreen; picture-in-picture"
+        title={lessonTitle}
+      />
+    );
+  }
+
+  // Direct URL (Supabase Storage or other)
+  return (
+    <video
+      key={videoUrl}
+      src={videoUrl}
+      controls
+      controlsList="nodownload"
+      onContextMenu={(e) => e.preventDefault()}
+      className="w-full h-full"
+      playsInline
+    >
+      Votre navigateur ne supporte pas la vidéo HTML5.
+    </video>
+  );
 }
 
 export function LessonPlayer({
@@ -153,25 +217,10 @@ export function LessonPlayer({
 
         {/* Video area */}
         <div className="relative bg-black aspect-video max-h-[60vh] w-full shrink-0">
-          {currentLesson?.video_url ? (
-            <video
-              key={currentLesson.id}
-              controls
-              className="w-full h-full"
-              onContextMenu={(e) => e.preventDefault()}
-            >
-              <source src={currentLesson.video_url} />
-            </video>
-          ) : (
-            <div className="w-full h-full flex flex-col items-center justify-center gap-4 text-white/40">
-              <div className="w-20 h-20 rounded-full bg-white/10 flex items-center justify-center">
-                <Play className="w-10 h-10 fill-white/30 ml-1" />
-              </div>
-              <p className="text-sm">
-                Vidéo disponible après connexion Supabase Storage
-              </p>
-            </div>
-          )}
+          <VideoPlayer
+            videoUrl={currentLesson?.video_url ?? null}
+            lessonTitle={currentLesson?.title ?? ""}
+          />
         </div>
 
         {/* Tabs + actions */}
