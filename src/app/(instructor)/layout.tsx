@@ -1,5 +1,6 @@
-﻿import { redirect } from "next/navigation";
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getUserRole } from "@/lib/permissions";
 import { InstructorSidebar } from "@/components/instructor/sidebar";
 import { DashboardHeader } from "@/components/dashboard/header";
 
@@ -13,6 +14,9 @@ export default async function InstructorLayout({
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/connexion");
+
+  const role = await getUserRole(user.id);
+  if (role !== "instructor" && role !== "admin") redirect("/dashboard");
 
   return (
     <div className="min-h-screen bg-surface flex">

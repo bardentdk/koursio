@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -15,19 +15,18 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { MOCK_COURSES } from "@/lib/data/mock-data";
-import { formatPrice } from "@/lib/utils/format";
 import { createClient } from "@/lib/supabase/client";
+import { formatPrice } from "@/lib/utils/format";
 import { toast } from "sonner";
 
-const VALID_COUPONS: Record<string, number> = {
-  FLASH70: 70,
-  FLASH50: 50,
-  ETUDIANT20: 20,
-  BIENVENUE70: 70,
-  SAVE10: 0,
-};
+interface CartCourse {
+  id: string;
+  title: string;
+  slug: string;
+  price: number;
+  sale_price: number | null;
+  thumbnail_url: string | null;
+}
 
 function CheckoutContent() {
   const router = useRouter();
@@ -35,6 +34,8 @@ function CheckoutContent() {
   const appliedCoupon = searchParams.get("coupon") ?? "";
 
   const [cartIds, setCartIds] = useState<string[]>([]);
+  const [cartCourses, setCartCourses] = useState<CartCourse[]>([]);
+  const [coursesLoading, setCoursesLoading] = useState(false);
   const [user, setUser] = useState<{ id: string; email: string } | null>(null);
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState<"info" | "payment" | "done">("info");
@@ -49,8 +50,19 @@ function CheckoutContent() {
   const [cardCvc, setCardCvc] = useState("");
   const [orderRef, setOrderRef] = useState("");
 
+  // Coupon state
+  const [couponCode, setCouponCode] = useState(appliedCoupon);
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [discountType, setDiscountType] = useState<string | null>(null);
+  const [discountValue, setDiscountValue] = useState(0);
+  const [couponApplied, setCouponApplied] = useState(false);
+  const [couponError, setCouponError] = useState("");
+
+  // Load cart IDs + auth
   useEffect(() => {
-    setCartIds(JSON.parse(localStorage.getItem("cart") ?? "[]"));
+    const ids = JSON.parse(localStorage.getItem("cart") ?? "[]") as string[];
+    setCartIds(ids);
+
     const supabase = createClient();
     supabase.auth.getUser().then(({ data }) => {
       if (data.user) {
@@ -61,13 +73,72 @@ function CheckoutContent() {
     });
   }, []);
 
-  const cartCourses = cartIds
-    .map((id) => MOCK_COURSES.find((c) => c.id === id))
-    .filter(Boolean) as (typeof MOCK_COURSES)[0][];
-  const subtotal = cartCourses.reduce((sum, c) => sum + c.price, 0);
-  const discountPct = VALID_COUPONS[appliedCoupon] ?? 0;
-  const discountAmt = discountPct > 0 ? subtotal * (discountPct / 100) : 0;
+  // Load courses from Supabase
+  useEffect(() => {
+    if (cartIds.length === 0) {
+      setCartCourses([]);
+      return;
+    }
+    setCoursesLoading(true);
+    const supabase = createClient();
+    supabase
+      .from("courses")
+      .select("id, title, slug, price, sale_price, thumbnail_url")
+      .in("id", cartIds)
+      .then(({ data, error }) => {
+        if (error) {
+          toast.error("Erreur lors du chargement du panier");
+        } else {
+          setCartCourses((data ?? []) as CartCourse[]);
+        }
+        setCoursesLoading(false);
+      });
+  }, [cartIds]);
+
+  // Validate coupon from URL param on mount if present
+  useEffect(() => {
+    if (appliedCoupon && cartCourses.length > 0) {
+      validateCoupon(appliedCoupon);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [appliedCoupon, cartCourses.length]);
+
+  const subtotal = cartCourses.reduce((sum, c) => sum + (c.sale_price ?? c.price), 0);
+  const discountAmt =
+    couponApplied && discountValue > 0
+      ? discountType === "percentage"
+        ? subtotal * (discountValue / 100)
+        : Math.min(discountValue, subtotal)
+      : 0;
   const total = subtotal - discountAmt;
+
+  const validateCoupon = async (code: string) => {
+    if (!code.trim()) return;
+    setCouponLoading(true);
+    setCouponError("");
+    try {
+      const res = await fetch("/api/checkout/validate-coupon", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: code.trim(), total: subtotal }),
+      });
+      const data = await res.json();
+      if (data.valid) {
+        setDiscountType(data.discount_type);
+        setDiscountValue(data.discount_value);
+        setCouponApplied(true);
+        toast.success("Code promo appliqué !");
+      } else {
+        setCouponApplied(false);
+        setDiscountValue(0);
+        setDiscountType(null);
+        setCouponError(data.message ?? "Code invalide");
+      }
+    } catch {
+      setCouponError("Erreur lors de la vérification");
+    }
+    setCouponLoading(false);
+  };
 
   const handleInfoSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -103,7 +174,7 @@ function CheckoutContent() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           courseIds: cartIds,
-          couponCode: appliedCoupon || null,
+          couponCode: couponApplied ? couponCode : null,
           subtotal,
           discount: discountAmt,
           total,
@@ -297,6 +368,42 @@ function CheckoutContent() {
                     required
                   />
                 </div>
+
+                {/* Coupon code field in payment step */}
+                <div className="flex gap-2">
+                  <Input
+                    label="Code promo"
+                    value={couponCode}
+                    onChange={(e) => {
+                      setCouponCode(e.target.value.toUpperCase());
+                      setCouponApplied(false);
+                      setCouponError("");
+                    }}
+                    placeholder="FLASH50"
+                    className="flex-1"
+                  />
+                  <div className="flex items-end">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="md"
+                      loading={couponLoading}
+                      onClick={() => validateCoupon(couponCode)}
+                      disabled={!couponCode.trim()}
+                    >
+                      Appliquer
+                    </Button>
+                  </div>
+                </div>
+                {couponError && (
+                  <p className="text-xs text-error -mt-3">{couponError}</p>
+                )}
+                {couponApplied && (
+                  <p className="text-xs text-success -mt-3">
+                    Code {couponCode} appliqué !
+                  </p>
+                )}
+
                 <Button
                   type="submit"
                   size="lg"
@@ -315,25 +422,34 @@ function CheckoutContent() {
               <h2 className="font-bold text-text-primary mb-4">
                 Récapitulatif
               </h2>
-              <div className="flex flex-col gap-3 mb-5">
-                {cartCourses.map((course) => (
-                  <div
-                    key={course.id}
-                    className="flex justify-between gap-2 text-sm"
-                  >
-                    <span className="text-text-secondary line-clamp-1 flex-1">
-                      {course.title}
-                    </span>
-                    <span className="font-semibold shrink-0">
-                      {formatPrice(course.price)}
-                    </span>
-                  </div>
-                ))}
-              </div>
-              {discountPct > 0 && (
+              {coursesLoading ? (
+                <div className="flex items-center justify-center py-6">
+                  <div className="w-6 h-6 rounded-full border-3 border-primary border-t-transparent animate-spin" />
+                </div>
+              ) : (
+                <div className="flex flex-col gap-3 mb-5">
+                  {cartCourses.map((course) => (
+                    <div
+                      key={course.id}
+                      className="flex justify-between gap-2 text-sm"
+                    >
+                      <span className="text-text-secondary line-clamp-1 flex-1">
+                        {course.title}
+                      </span>
+                      <span className="font-semibold shrink-0">
+                        {formatPrice(course.sale_price ?? course.price)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {couponApplied && discountAmt > 0 && (
                 <div className="flex justify-between text-sm text-success mb-2">
                   <span>
-                    Code {appliedCoupon} (-{discountPct}%)
+                    Code {couponCode}{" "}
+                    {discountType === "percentage"
+                      ? `(-${discountValue}%)`
+                      : `(-${formatPrice(discountValue)})`}
                   </span>
                   <span>-{formatPrice(discountAmt)}</span>
                 </div>
